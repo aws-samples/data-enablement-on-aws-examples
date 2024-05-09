@@ -7,13 +7,16 @@
 
 ## Deployment
 
-To demo use of Spline, the CDK application deploys a VPC with related resources and an EC2 instance where the Spline server and related resources are installed and run with docker-compose as outlined in the [spline-getting-started docs](https://github.com/AbsaOSS/spline-getting-started/tree/main/spline-on-AWS-demo-setup). 
+To demo use of Spline, this CDK application deploys a VPC with related resources and an EC2 instance where the Spline server and related resources are installed and run with docker-compose as outlined in the [spline-getting-started docs](https://github.com/AbsaOSS/spline-getting-started/tree/main/spline-on-AWS-demo-setup). 
 
-The EC2 [user data](./spline/user_data.sh) automates the install of required tools/software and starts the spline services. The EC2 instance is launched in a private subnet and we connect using AWS Systems Manager. 
+The EC2 [user data](./spline/user_data.sh) automates the install of required tools/software. The instance is launched in a private subnet and we connect using AWS Systems Manager (SSM). This prevents the Spline endpoints being exposed via a public IP. Note, in this demo the Spline server uses an HTTP endpoint, this risk is mitigated in the demo by deploying into a private subnet but any deployment should look to use HTTPS. 
 
-The install script can be modified to use a public IP of the instance so that this can be passed as an argument when starting Spline services, allowing for external connections if this was needed. This would also require modification of the CDK infra to launch into a public subnet and to update the associated Security Group to allow connections. 
+In order to connect, we will use SSM with local port forwarding for multiple ports (one to allow us to connect to the Spline REST gateway and another for the Spline UI). This requires you to have the [session manager plugin installed](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) alongside the AWS CLI. 
 
-In order to connect, we will use SSM with local port forwarding for multiple ports (one for the Spline REST gateway and another for the Spline UI). So specify an EC2 key pair that you can associate with the instance and that you have locally so that you can connect to the instance. 
+This method requires to launch the EC2 instance with an SSH key, so when deploying the CDK stack, specify an EC2 key pair from the AWS account and region that you are deploying into that you can associate with the instance. Ensure that you have the corresponding private key locally that you can use when connecting to the instance. 
+
+Below shows an existing EC2 key pair, specify the name when deploying the CDK stack. 
+![Existing EC2 key pair](./docs/ec2_keypair.png)
 
 Deploy by running:
 ```
@@ -32,7 +35,7 @@ See [cleanup](#cleanup) after you have finished with the demo to remove related 
 
 ### Connecting to Spline UIs
 
-Once the Spline EC2 instance is running, we can connect to the user interfaces from a local machine using SSH config like below: 
+Once the CDK stack is deployed and the Spline EC2 instance is running, we can connect to the user interfaces from a local machine using SSH config like below. The example shown is based on Linux/macOS ssh config:
 
 ```
 Host spline
@@ -44,14 +47,34 @@ Host spline
 	ProxyCommand aws ssm start-session --target %h --document-name AWS-StartSSHSession
 ```
 
-Be sure to use your EC2 instance id and a path to the SSH key used when creating the EC2 instance in the above. Start the session by running ```ssh spline```. This will give you a terminal on your EC2 instance as well as starting the port forwarding. 
+Be sure to use your EC2 instance id and a path to the SSH key used when creating the EC2 instance in the above. The instance id is given as an output in the CDK stack. Once configured, start the session by running ```ssh spline```. This will give you a terminal on your EC2 instance as well as starting the port forwarding. 
 
-We can then visit localhost:8080 to view the Spline REST Gateway
+When connecting for the first time, you will need to confirm the key fingerprint. Once logged in, docker-compose pre-requisites and assets will have been pre-configured, navigate to the spline folder:
+
+```
+cd /home/ec2-user/spline
+```
+
+Then launch Spline with:
+
+```
+docker-compose up
+```
+
+Or if you want to seed Spline with some example jobs and metadata, you can run:
+```
+SEED=1 docker-compose up
+```
+
+Once the service is successfully running, we can then visit localhost:8080 to view the Spline REST Gateway. You will need to make sure the service is running, this can take a few minutes when first running docker-compose since the images need to be pulled. 
 ![Spline REST Gateway](./docs/spline_rest_gateway.png)
 
 And localhost:9090 to view the Spline UI
 ![Spline UI](./docs/spline_ui.png)
 The screenshot shown has had a record added to it from a Spark job. 
+
+If you ran docker-compose with the SEED option, you should see some example metadata:
+![Spline examples](./docs/spline_examples.png)
 
 ### Running with AWS Glue 
 
@@ -61,9 +84,12 @@ As part of tracking lineage information from our AWS Glue jobs, we will be sendi
 
 ![create Glue connection](./docs/create_glue_connection.png)
 
+* Go to AWS Glue, Connections and then *Create Connection*
+* Choose the *Network* data source
 * For VPC, choose the VPC the Spline Server EC2 instance is deployed into
 * Likewise for Subnet
 * For Security Group, choose the same, self-referencing security group that is associated with the EC2 instance. 
+* Give the connection a name and then create the connection
 
 #### AWS Glue Python Job Example 
 
@@ -89,7 +115,7 @@ Use the private IP address of the EC2 instance (where Spline is running) for the
 
 We can then write our Python script to retrieve, process and write data. We decorate our function to provide the lineage information to Spline. 
 
-An example script is as below:
+An example script is as below, you can use this as a template and update information to read from and write to your Amazon S3 locations. 
 ```python
 import sys
 import spline_agent
