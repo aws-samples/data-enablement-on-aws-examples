@@ -210,9 +210,9 @@ resource "aws_rds_cluster_instance" "demo_mysql_instance" {
   instance_class     = "db.serverless"
   engine             = aws_rds_cluster.demo_mysql_cluster.engine
   engine_version     = aws_rds_cluster.demo_mysql_cluster.engine_version
-  // using publicly accessible in demo to make connecting from local SQL client easier
-  // in production, consider setting to false and only be accessible from within VPC
-  publicly_accessible = true
+  // you could consider making publicly accessible in demo to make connecting from local SQL client easier
+  // it is recommended to keep false, especially for production or non-sample data
+  publicly_accessible = false
 }
 
 
