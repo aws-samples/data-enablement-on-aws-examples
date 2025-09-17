@@ -1,0 +1,35 @@
+<svg width="700" height="300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Operational Database Icon -->
+  <g>
+    <ellipse cx="150" cy="100" rx="50" ry="20" fill="#4A90E2" stroke="#333" stroke-width="1"/>
+    <rect x="100" y="100" width="100" height="80" fill="#4A90E2" stroke="#333" stroke-width="1"/>
+    <ellipse cx="150" cy="180" rx="50" ry="20" fill="#4A90E2" stroke="#333" stroke-width="1"/>
+    <text x="150" y="220" font-family="Arial" font-size="14" fill="#333" text-anchor="middle">
+      Operational Database
+    </text>
+  </g>
+
+  <!-- Analytical Data Warehouse Icon -->
+  <g>
+    <!-- Warehouse base rectangle -->
+    <rect x="480" y="120" width="100" height="60" fill="#F5A623" stroke="#333" stroke-width="1"/>
+    <!-- Roof -->
+    <polygon points="480,120 530,80 580,120" fill="#F5A623" stroke="#333" stroke-width="1"/>
+    <text x="530" y="220" font-family="Arial" font-size="14" fill="#333" text-anchor="middle">
+      Analytical Data Warehouse
+    </text>
+  </g>
+
+  <!-- Arrow -->
+  <g stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)">
+    <line x1="200" y1="140" x2="480" y2="140"/>
+  </g>
+
+  <!-- Arrowhead Definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+      refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

@@ -18,9 +18,10 @@ The purpose of this demo is to show a modern, end-to-end data pipeline on AWS. T
 ## Deployment
 
 * Set or replace variables as required in *terraform.tfvars* or equivalent
+* Run ```terraform init``` if required 
 * Run ```terraform apply```
 * After resources have deployed, can create the Zero ETL integration via the console (or similar)
-* Then populate the source db with sample data. An easy way of doing this is connecting via a SQL client from an EC2 launched within the same demo VPC, with the self referencing security group associated with it. 
+* Then populate the source db with sample data. An easy way of doing this is connecting via a SQL client from an EC2 launched within the same demo VPC, with the self referencing security group associated with it. In the demo code, the database is publically accessible to make connecting easier, you just need to add a security group rule to allow access from your client
 * With the Zero ETL established, can use Redshift Query Editor to explore data and use Generative SQL capabilities. 
 * You can connect to Redshift from QuickSight by creating a VPC connection. Can then create dashboards and utilize Q in QuickSight. 
 

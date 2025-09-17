@@ -24,6 +24,8 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+data "aws_region" "current" {}
+
 // vpc to contain demo resources 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
@@ -63,6 +65,62 @@ resource "aws_security_group" "intra_security_group" {
 
   tags = {
     Name = "${var.name_prefix}-self-referencing-sg"
+  }
+}
+
+// s3 vpc endpoint 
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = module.vpc.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids = module.vpc.private_route_table_ids
+  tags = {
+    Name = "${var.name_prefix}-s3-vpc-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ec2" {
+  vpc_id            = module.vpc.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.ec2messages"
+  vpc_endpoint_type = "Interface"
+  security_group_ids = [
+    aws_security_group.intra_security_group.id
+  ]
+  private_dns_enabled = true
+  subnet_ids = module.vpc.private_subnets
+  ip_address_type = "ipv4"
+  tags = {
+    Name = "${var.name_prefix}-ec2-vpc-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id            = module.vpc.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.ssm"
+  vpc_endpoint_type = "Interface"
+  security_group_ids = [
+    aws_security_group.intra_security_group.id
+  ]
+  private_dns_enabled = true
+  subnet_ids = module.vpc.private_subnets
+  ip_address_type = "ipv4"
+  tags = {
+    Name = "${var.name_prefix}-ssm-vpc-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ssmmessages" {
+  vpc_id            = module.vpc.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
+  vpc_endpoint_type = "Interface"
+  security_group_ids = [
+    aws_security_group.intra_security_group.id
+  ]
+  private_dns_enabled = true
+  subnet_ids = module.vpc.private_subnets
+  ip_address_type = "ipv4"
+  tags = {
+    Name = "${var.name_prefix}-ssmmessages-vpc-endpoint"
   }
 }
 
@@ -121,7 +179,7 @@ resource "aws_redshiftserverless_workgroup" "demo_workgroup" {
 
   config_parameter {
     parameter_key = "require_ssl"
-    parameter_value = "false"
+    parameter_value = "true"
   }
 
   config_parameter {
@@ -210,9 +268,9 @@ resource "aws_rds_cluster_instance" "demo_mysql_instance" {
   instance_class     = "db.serverless"
   engine             = aws_rds_cluster.demo_mysql_cluster.engine
   engine_version     = aws_rds_cluster.demo_mysql_cluster.engine_version
-  // you could consider making publicly accessible in demo to make connecting from local SQL client easier
+  // publicly accessible in demo to make connecting from local SQL client easier
   // it is recommended to keep false, especially for production or non-sample data
-  publicly_accessible = false
+  publicly_accessible = true
 }
 
 
